@@ -87,17 +87,17 @@ void save_image(const char *filename, int *dwells, int w, int h) {
 	free(row);
 }  // save_image
 
-
-
 /** computes the dwell for a single pixel */
-__device__ int pixel_dwell(int w, int h, complex cmin, complex cmax, int x,
-		int y) {
-	complex dc = cmax - cmin;
-	float fx = (float) x / w, fy = (float) y / h;
-	complex c = cmin + complex(fx * dc.re, fy * dc.im);
+template<typename real_t>
+__device__ int pixel_dwell(int w, int h, complex<real_t> cmin,
+		complex<real_t> cmax, int x, int y) {
+	complex<real_t> dc = cmax - cmin;
+	real_t fx = (real_t) x / w;
+	real_t fy = (real_t) y / h;
+	complex<real_t> c = cmin + complex<real_t>(fx * dc.re, fy * dc.im);
 	int dwell = 0;
-	complex z = c;
-	while (dwell < MAX_DWELL && z.abs2(z) < 2 * 2) {
+	complex<real_t> z = c;
+	while (dwell < MAX_DWELL && z.abs2() < 2 * 2) {
 		z = z * z + c;
 		dwell++;
 	}
@@ -113,8 +113,9 @@ __device__ int pixel_dwell(int w, int h, complex cmin, complex cmax, int x,
  @param cmax the complex value associated with the right-top corner of the
  image
  */
-__global__ void mandelbrot_k(int *dwells, int w, int h, complex cmin,
-		complex cmax) {
+template<typename real_t>
+__global__ void mandelbrot_k(int *dwells, int w, int h, complex<real_t> cmin,
+		complex<real_t> cmax) {
 	// complex value to start iteration (c)
 	int x = threadIdx.x + blockIdx.x * blockDim.x;
 	int y = threadIdx.y + blockIdx.y * blockDim.y;
@@ -155,9 +156,9 @@ int main(int argc, char **argv) {
 	// compute the dwells, copy them back
 	double t1 = omp_get_wtime();
 	dim3 bs(64, 4), grid(divup(w, bs.x), divup(h, bs.y));
-	mandelbrot_k<<<grid, bs>>>(d_dwells, w, h, complex(-1.5, -1),
-			complex(0.5, 1));
-	cucheck(cudaThreadSynchronize());
+	mandelbrot_k<<<grid, bs>>>(d_dwells, w, h, complex<float>(-1.5, -1),
+			complex<float>(0.5, 1));
+	cucheck(cudaDeviceSynchronize());
 	double t2 = omp_get_wtime();
 	cucheck(cudaMemcpy(h_dwells, d_dwells, dwell_sz, cudaMemcpyDeviceToHost));
 	gpu_time = t2 - t1;
