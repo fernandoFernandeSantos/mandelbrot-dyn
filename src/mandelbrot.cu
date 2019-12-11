@@ -10,9 +10,9 @@
 #include "complex.h"
 
 /** data size */
-#define H (8 * 1024)
-#define W (8 * 1024)
-#define MAX_DWELL 256
+#define H (16 * 1024)
+#define W (16 * 1024)
+#define MAX_DWELL 512
 #define BS 256
 
 #define CUT_DWELL (MAX_DWELL / 4)
@@ -62,8 +62,8 @@ void save_image(const char *filename, int *dwells, int w, int h) {
 	// set title
 	png_text title_text;
 	title_text.compression = PNG_TEXT_COMPRESSION_NONE;
-	title_text.key = "Title";
-	title_text.text = "Mandelbrot set, per-pixel";
+	title_text.key = const_cast<char*>("Title");
+	title_text.text = const_cast<char*>("Mandelbrot set, per-pixel");
 	png_set_text(png_ptr, info_ptr, &title_text, 1);
 	png_write_info(png_ptr, info_ptr);
 
@@ -156,8 +156,8 @@ int main(int argc, char **argv) {
 	// compute the dwells, copy them back
 	double t1 = omp_get_wtime();
 	dim3 bs(64, 4), grid(divup(w, bs.x), divup(h, bs.y));
-	mandelbrot_k<<<grid, bs>>>(d_dwells, w, h, complex<float>(-1.5, -1),
-			complex<float>(0.5, 1));
+	mandelbrot_k<<<grid, bs>>>(d_dwells, w, h, complex<double>(-1.5, -1),
+			complex<double>(0.5, 1));
 	cucheck(cudaDeviceSynchronize());
 	double t2 = omp_get_wtime();
 	cucheck(cudaMemcpy(h_dwells, d_dwells, dwell_sz, cudaMemcpyDeviceToHost));
