@@ -19,10 +19,10 @@ all: $(EXEC)
 $(EXEC): $(OBJS)  
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LDFLAGS) $(INCLUDE)
 
-$(OBJDIR)%.o: %.cpp $(DEPS)
+$(OBJDIR)%.o: src/%.cpp $(DEPS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@ $(INCLUDE)
 	
-$(OBJDIR)%.o: %.cu $(DEPS)
+$(OBJDIR)%.o: src/%.cu $(DEPS)
 	$(NVCC) $(ARCH) $(NVCCFLAGS) -c $< -o $@ $(INCLUDE)
 	
 clean:
